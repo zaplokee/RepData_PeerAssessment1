@@ -59,7 +59,7 @@ medianSteps<-median(stepsPerDay, na.rm=T)
 ```r
 stepsByInterval<-tapply(givenData$steps, givenData$interval, mean, na.rm=T)
 intervals<-names(stepsByInterval)
-plot(x=intervals, y=stepsByInterval, type="l", main="Average steps by intervals")
+plot(x=intervals, y=stepsByInterval, type="l", main="Average number of steps by intervals")
 ```
 
 ![](PA1_template_files/figure-html/AverageStepsInInterval-1.png) 
