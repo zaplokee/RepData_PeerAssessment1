@@ -8,12 +8,12 @@
 ####Download, unzip file, write the access date and time
 
 [URL for downloading the data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)  
-Data for this report was downloaded: Sat Apr 18 18:25:07 2015
+Data for this report was downloaded: Tue May 12 09:42:09 2015
 
 ####read CSV file
 
 ```r
-unzip("activity.zip")
+unzip("repdata_data_activity.zip")
 givenData<-read.csv(file="activity.csv")
 ```
 
@@ -31,7 +31,10 @@ stepsPerDay<-tapply(givenData$steps, givenData$date, sum, na.rm=T)
 ####Make a histogram of the total number of steps taken each day
 
 ```r
-hist(stepsPerDay)
+hist(stepsPerDay, xlab="steps per day", breaks=20, col="grey90", main="Total number of steps taken each day")
+abline(v=mean(stepsPerDay, na.rm=T), lwd=2, col="orange")
+abline(v=median(stepsPerDay, na.rm=T), lwd=2, col="blue")
+legend("topright", lwd=2, cex=.9, col=c("orange", "blue"), legend=c("mean", "median"))
 ```
 
 ![](PA1_template_files/figure-html/totalStepsHistogram-1.png) 
@@ -83,7 +86,8 @@ for (i in 1:nrow(givenData)) {
 ```
 Total number of missing values in dataset: **2304**.
 
-####Create a new dataset that is equal to the original dataset but with the missing data filled in. Each missing value will be replaced with median value for this 5-minute interval, because mediana doesn't include maximum and minimum values
+####Create a new dataset that is equal to the original dataset but with the missing data filled in. 
+Each missing value will be replaced with median value for this 5-minute interval, because mediana doesn't depend on extreme values that can be caused by unusual circumstances.  
 
 ```r
 medianStepsByInterval<-tapply(givenData$steps, givenData$interval, median, na.rm=T)
@@ -113,10 +117,13 @@ newMedianSteps<-median(newStepsPerDay)
 - The mean of the total number of steps taken per day: **9503.8688525**.  
 - The median of the total number of steps taken per day: **10395**.
 
-Make a histogram of the total number of steps taken each day.
+Make a histogram of the total number of steps taken each day for new data set with replaced missing values.
 
 ```r
-hist(newStepsPerDay)
+hist(newStepsPerDay, breaks=20, col="grey90", main="Number of steps per day, for new data set with replaced NAs", xlab="steps per day")
+abline(v=newMeanSteps, lwd=2, col="orange")
+abline(v=newMedianSteps, lwd=2, col="blue")
+legend("topright", lwd=2, cex=.9, col=c("orange", "blue"), legend=c("mean", "median"))
 ```
 
 ![](PA1_template_files/figure-html/newTotalStepsHistogram-1.png) 
@@ -148,12 +155,36 @@ Add new column to dataset
 newDF$dayType<-dayType
 ```
 
+  
+  
+####Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).  
 
-Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+Construct data frame with information need for making a plot.
+
+```r
+#list of two data frames: data for weekdays are separeted from data for weekends
+splittedByDaytype<-split(newDF, newDF$dayType)  
+
+#operate separetly with data frame for weekdays and data frame for weekends, find average number of steps per interval
+weekdaysData<-splittedByDaytype[[1]]
+weekendsData<-splittedByDaytype[[2]]
+weekdaysData<-tapply(weekdaysData$steps, weekdaysData$interval, mean)
+weekendsData<-tapply(weekendsData$steps, weekendsData$interval, mean)
+
+#constructing factor variable for types of days
+dayType<-rep("weekday", length(weekdaysData))
+dayType<-c(dayType, rep("weekend", length(weekendsData)))
+
+#construct new data frame which contains 3 variables needed for making plots
+stepsPerIntervalByDaytype<-data.frame(interval=as.integer(c(names(weekdaysData), names(weekendsData))), averageSteps=as.numeric(c(weekdaysData, weekendsData)), dayType=as.factor(dayType))
+```
+  
+  
+  Make a panel plot.
 
 ```r
 library(lattice)
-xyplot(steps~interval|dayType, data=newDF, type="l",layout = c(1, 2))
+xyplot(averageSteps~interval|dayType, data=stepsPerIntervalByDaytype, type="l",layout = c(1, 2))
 ```
 
 ![](PA1_template_files/figure-html/panelplotForWeekdaysWeekends-1.png) 
